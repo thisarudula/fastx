@@ -89,16 +89,60 @@
             overflow-x: auto;
             position: relative;
         }
+
+        /* Falling Stars Animation */
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            background: linear-gradient(45deg, #00f3ff, transparent);
+            border-radius: 50%;
+            filter: drop-shadow(0 0 6px #00f3ff);
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10vh) translateX(0) scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(110vh) translateX(20vw) scale(1);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 
-<body class="min-h-screen bg-transparent text-slate-200 p-4 md:p-8 overflow-x-hidden relative">
+<body class="min-h-screen bg-obsidian text-slate-200 p-4 md:p-8 overflow-x-hidden relative">
 
-    <!-- Video Background -->
-    <video autoplay loop muted playsinline class="fixed inset-0 w-full h-full object-cover z-[-2] opacity-70">
-        <source src="https://assets.codepen.io/3364143/7btrrd.mp4" type="video/mp4">
-    </video>
-    <div class="fixed inset-0 bg-obsidian/40 backdrop-blur-[2px] z-[-1] pointer-events-none"></div>
+    <!-- CSS Star Background -->
+    <div class="stars-container" id="stars"></div>
+    <div class="fixed inset-0 bg-gradient-to-b from-transparent to-deepNavy/80 z-[-1] pointer-events-none"></div>
+
+    <script>
+        // Generate stars
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 40; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            star.style.width = Math.random() * 3 + 'px';
+            star.style.height = star.style.width;
+            star.style.left = Math.random() * 100 + 'vw';
+            star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            star.style.animationDelay = Math.random() * 5 + 's';
+            starsContainer.appendChild(star);
+        }
+    </script>
 
     <div id="app-content" class="w-full">
         <header
