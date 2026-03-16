@@ -75,10 +75,15 @@ function showDashboard() {
     if (welcomeText) {
         welcomeText.innerHTML = `Welcome, <span class="text-neonCyan">${currentUser.name.split(' ')[0]}</span>`;
     }
+    // Mobile fallback elements
+    const welcomeTextMobile = document.getElementById('welcome-text-mobile');
+    if (welcomeTextMobile) welcomeTextMobile.innerHTML = `Welcome, <span class="text-neonCyan">${currentUser.name.split(' ')[0]}</span>`;
 
     // Still update the hidden UID container for any internal refs
     const userDisplay = document.getElementById('user-display');
     if (userDisplay) userDisplay.innerText = `UID: ${currentUser.uid}`;
+    const userDisplayMobile = document.getElementById('user-display-mobile');
+    if (userDisplayMobile) userDisplayMobile.innerText = `UID: ${currentUser.uid}`;
 
     if (currentUser.role === 'admin') {
         const adminBadge = document.getElementById('admin-badge');
