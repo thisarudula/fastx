@@ -1,16 +1,16 @@
 const { Pool } = require('pg');
 
 const pool = new Pool(
-    process.env.DATABASE_URL
-        ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
-        : {
+    process.env.DB_HOST
+        ? {
             host: process.env.DB_HOST,
             port: process.env.DB_PORT || 5432,
-            user: process.env.DB_USER,
+            user: process.env.DB_USER || 'postgres',
             password: process.env.DB_PASSWORD,
             database: process.env.DB_NAME || 'postgres',
             ssl: { rejectUnauthorized: false }
           }
+        : { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
 );  // required for Supabase/Render
 
 // Auto-create tables on startup
