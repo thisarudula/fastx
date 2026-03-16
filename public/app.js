@@ -159,20 +159,20 @@ function renderDashboard() {
             </div>
             
             ${item.isPreStocked ? `
-            <div class="mb-4 space-y-2 bg-black/20 p-4 rounded-xl border border-white/5">
-                <div class="flex justify-between items-center mb-2 pb-2 border-b border-white/5">
-                    <p class="text-[8px] uppercase text-slate-500 font-bold">Subscription Status</p>
+            <div class="mb-4 space-y-2 p-4 rounded-xl border border-white/10" style="background: rgba(5,5,15,0.85);">
+                <div class="flex justify-between items-center mb-2 pb-2 border-b border-white/10">
+                    <p class="text-[8px] uppercase text-slate-400 font-bold">Subscription Status</p>
                     <span class="text-[9px] font-black ${getExpiryColor(item.creation_date)} px-2 py-0.5 rounded-full border ${getExpiryBorder(item.creation_date)}">
                         ${getExpiryText(item.creation_date)}
                     </span>
                 </div>
-                <div class="flex justify-between items-end">
-                    <div><p class="text-[8px] uppercase text-slate-500">Email Identifier</p><p class="text-[10px] text-neonCyan font-mono">${item.email}</p></div>
-                    <button onclick="copyToClipboard('${item.email}')" class="text-[8px] text-slate-500 hover:text-neonCyan uppercase font-bold">Copy</button>
+                <div class="flex justify-between items-end py-1">
+                    <div><p class="text-[8px] uppercase text-slate-400 mb-0.5">Email Identifier</p><p class="text-[11px] text-neonCyan font-mono font-bold">${item.email}</p></div>
+                    <button onclick="copyToClipboard('${item.email}')" class="text-[8px] text-slate-500 hover:text-neonCyan uppercase font-bold transition-colors">Copy</button>
                 </div>
-                <div class="flex justify-between items-end">
-                    <div><p class="text-[8px] uppercase text-slate-500">Password</p><p class="text-[10px] text-neonCyan font-mono">${item.password}</p></div>
-                    <button onclick="copyToClipboard('${item.password}')" class="text-[8px] text-slate-500 hover:text-neonCyan uppercase font-bold">Copy</button>
+                <div class="flex justify-between items-end py-1">
+                    <div><p class="text-[8px] uppercase text-slate-400 mb-0.5">Password</p><p class="text-[11px] text-neonCyan font-mono font-bold">${item.password}</p></div>
+                    <button onclick="copyToClipboard('${item.password}')" class="text-[8px] text-slate-500 hover:text-neonCyan uppercase font-bold transition-colors">Copy</button>
                 </div>
             </div>
             ` : ''}
