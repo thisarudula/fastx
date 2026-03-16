@@ -46,6 +46,7 @@ app.post('/api/auth/signup', async (req, res) => {
         await q('INSERT INTO users (name, email, password_hash, uid_4) VALUES (?, ?, ?, ?)', [name, email, hash, uid_4]);
         res.json({ success: true, uid: uid_4 });
     } catch (err) {
+        console.error('SIGNUP_DB_ERROR:', err);
         res.status(400).json({ error: 'EMAIL_ALREADY_EXISTS' });
     }
 });
@@ -64,6 +65,7 @@ app.post('/api/auth/login', async (req, res) => {
         req.session.userName = user.name;
         res.json({ success: true, user: { name: user.name, uid: user.uid_4, role: user.role } });
     } catch (err) {
+        console.error('LOGIN_DB_ERROR:', err);
         res.status(500).json({ error: err.message });
     }
 });
