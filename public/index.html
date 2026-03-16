@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" class="overflow-x-hidden">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastX // SECURE_HUB</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@400;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { obsidian: '#050505', neonCyan: '#00f3ff', royalBlue: '#0077ff', deepNavy: '#0a0a14' },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], cyber: ['Orbitron', 'sans-serif'] },
+                },
+            },
+        }
+    </script>
+    <link href="./style.css" rel="stylesheet">
+    <style>
+        .progress-bar {
+            transition: width 1s linear;
+        }
+
+        .toast {
+            transform: translateY(100px);
+            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        .glass-heavy {
+            background: rgba(10, 10, 20, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 243, 255, 0.1);
+        }
+
+        @keyframes logo-pulse {
+
+            0%,
+            100% {
+                text-shadow: 0 0 10px rgba(0, 243, 255, 0.5), 0 0 20px rgba(0, 243, 255, 0.2);
+            }
+
+            50% {
+                text-shadow: 0 0 20px rgba(0, 243, 255, 0.8), 0 0 40px rgba(0, 243, 255, 0.4);
+                transform: scale(1.02);
+            }
+        }
+
+        .animate-logo {
+            animation: logo-pulse 3s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        .logout-circle {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .logout-circle:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            transform: rotate(90deg) scale(1.1);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 243, 255, 0.4);
+            border-radius: 10px;
+            border: 2px solid rgba(10, 10, 20, 0.8);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 243, 255, 0.8);
+        }
+
+        .stock-table-container {
+            max-width: 100%;
+            overflow-x: auto;
+            position: relative;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-obsidian text-slate-200 p-4 sm:p-8 overflow-x-hidden w-full max-w-[100vw]">
+    <div id="auth-overlay" class="fixed inset-0 bg-obsidian z-[20000] flex items-center justify-center p-4">
+        <div class="glass p-10 rounded-[2.5rem] max-w-md w-full text-center">
+            <h1 class="text-4xl font-black mb-2"><span class="text-neonCyan">Fast</span>X</h1>
+            <p class="text-[10px] uppercase tracking-widest text-slate-500 mb-8">Authorization Required</p>
+            <div id="login-form" class="space-y-4">
+                <input type="email" id="login-email" placeholder="EMAIL ADDRESS"
+                    class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none text-white focus:border-neonCyan">
+                <input type="password" id="login-pass" placeholder="PASSWORD"
+                    class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none text-white focus:border-neonCyan">
+                <button onclick="login()"
+                    class="w-full btn-gradient py-4 rounded-2xl font-bold uppercase tracking-widest text-white shadow-lg">Authenticate</button>
+                <p class="text-xs text-slate-500">New around here? <span onclick="toggleAuthForm()"
+                        class="text-neonCyan cursor-pointer hover:underline">Create Account</span></p>
+            </div>
+            <div id="signup-form" class="space-y-4 hidden">
+                <input type="text" id="signup-name" placeholder="FULL NAME"
+                    class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none text-white focus:border-neonCyan">
+                <input type="email" id="signup-email" placeholder="EMAIL ADDRESS"
+                    class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none text-white focus:border-neonCyan">
+                <input type="password" id="signup-pass" placeholder="PASSWORD"
+                    class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none text-white focus:border-neonCyan">
+                <button onclick="signup()"
+                    class="w-full btn-gradient py-4 rounded-2xl font-bold uppercase tracking-widest text-white shadow-lg">Register</button>
+                <p class="text-xs text-slate-500">Already a member? <span onclick="toggleAuthForm()"
+                        class="text-neonCyan cursor-pointer hover:underline">Login</span></p>
+            </div>
+        </div>
+    </div>
+    <div id="app-content" class="hidden w-full">
+        <header
+            class="w-full max-w-4xl mx-auto flex flex-row items-center justify-between mb-8 p-3 sm:p-5 sm:px-8 glass rounded-full border border-white/5 relative overflow-hidden group">
+            <div class="absolute inset-0 bg-gradient-to-r from-neonCyan/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+
+            <!-- Logo -->
+            <div class="flex flex-col text-left relative z-10 min-w-fit">
+                <h1 class="text-xl sm:text-3xl font-black tracking-tighter text-white font-cyber animate-logo leading-none">
+                    <span class="text-neonCyan">FAST</span>X
+                </h1>
+                <p class="text-[6px] sm:text-[9px] uppercase tracking-[0.3em] sm:tracking-[0.4em] text-slate-500 font-bold mt-1">
+                    Secure<span class="text-neonCyan/40">_</span>Hub
+                </p>
+            </div>
+            
+            <!-- Auth Status Mid Box -->
+            <div class="flex flex-col text-center overflow-hidden relative z-10 flex-1 px-2 sm:px-6">
+                <span class="text-[7px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-slate-500 font-black mb-1 hidden sm:block">Authorization Status</span>
+                <div class="flex flex-row items-center justify-center gap-1.5 sm:gap-3">
+                    <h2 id="welcome-text" class="text-[10px] sm:text-sm font-bold text-white tracking-tight truncate max-w-[80px] sm:max-w-[200px]">Syncing...</h2>
+                    <span id="user-display" class="text-[8px] sm:text-[10px] bg-white/5 text-slate-300 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md font-mono border border-white/10 shrink-0">UID: ---</span>
+                    <span id="admin-badge" class="hidden text-[7px] sm:text-[8px] uppercase bg-neonCyan/10 text-neonCyan px-1.5 sm:px-2 py-0.5 sm:py-1 rounded font-black border border-neonCyan/20 shrink-0">ADMIN</span>
+                </div>
+            </div>
+
+            <!-- Corner Buttons -->
+            <div class="flex flex-row items-center justify-end gap-1.5 sm:gap-3 relative z-10 min-w-fit">
+                <button id="stock-inventory-btn" onclick="window.location.href='/admin.html'" title="Stock Inventory"
+                    class="hidden bg-[#2D2D30] hover:bg-[#3D3D40] text-white p-2.5 sm:p-3 rounded-full transition-all flex items-center justify-center shadow-lg">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                </button>
+                <div onclick="logout()" class="logout-circle !w-9 !h-9 sm:!w-11 sm:!h-11" title="Secure Logout">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </div>
+            </div>
+        </header>
+
+        <!-- Admin Dashboard Section -->
+        <section id="admin-dashboard-section"
+            class="hidden w-full max-w-4xl mx-auto mb-12 p-5 sm:p-8 glass rounded-[2.5rem] border border-neonCyan/10">
+            <div class="flex flex-col sm:flex-row items-center sm:items-start justify-between mb-8 gap-4 sm:gap-0 text-center sm:text-left">
+                <h2 class="text-2xl font-bold text-white font-cyber flex items-center gap-3">
+                    <span class="w-2 h-2 bg-neonCyan rounded-full animate-pulse"></span>
+                    ADMIN_CORE_STATION
+                </h2>
+                <span class="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-bold">Terminal Integrated</span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div class="space-y-10">
+                    <div class="space-y-4">
+                        <h3 class="text-xs uppercase font-black text-neonCyan tracking-[0.2em] mb-4">Stock Management
+                        </h3>
+                        <select id="stock-service-type"
+                            class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:border-neonCyan outline-none text-white mb-2">
+                            <option value="ChatGPT Plus">ChatGPT Plus</option>
+                            <option value="ChatGPT Business">ChatGPT Business</option>
+                            <option value="ChatGPT Team">ChatGPT Team</option>
+                            <option value="Other Service">Other Service</option>
+                        </select>
+                        <input type="email" id="stock-email" placeholder="Account Email"
+                            class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:border-neonCyan outline-none text-white">
+                        <input type="password" id="stock-pass" placeholder="Account Password"
+                            class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:border-neonCyan outline-none text-white">
+                        <input type="text" id="stock-secret" placeholder="TOTP Secret (Base32)"
+                            class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:border-neonCyan outline-none text-white">
+                        <div class="space-y-1">
+                            <p class="text-[10px] uppercase text-slate-500 font-bold ml-1">Account Creation Date</p>
+                            <input type="date" id="stock-date"
+                                class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:border-neonCyan outline-none text-white">
+                        </div>
+                        <button onclick="stockAccount()"
+                            class="w-full btn-gradient py-3 rounded-xl font-bold text-xs uppercase tracking-widest text-white shadow-lg">Initialize
+                            Stock</button>
+                    </div>
+                    <div class="space-y-4 pt-6 border-t border-white/5">
+                        <h3 class="text-xs uppercase font-black text-neonCyan tracking-[0.2em] mb-4">Assign Uplink</h3>
+                        <select id="stock-select"
+                            class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:border-neonCyan outline-none text-white"></select>
+                        <input type="text" id="assign-uid" placeholder="User UID (4-digit)"
+                            class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:border-neonCyan outline-none text-white">
+                        <button onclick="assignAccount()"
+                            class="w-full bg-white text-obsidian py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-neonCyan transition-all">Establish
+                            Remote Link</button>
+                    </div>
+                </div>
+                <div class="space-y-10 border-l border-white/5 pl-0 lg:pl-10">
+                    <div>
+                        <h3 class="text-xs uppercase font-black text-slate-500 tracking-[0.2em] mb-4">User Registry</h3>
+                        <div class="bg-black/20 rounded-2xl overflow-hidden text-[10px] border border-white/5">
+                            <table class="w-full text-left">
+                                <thead class="bg-white/5 text-slate-500 uppercase">
+                                    <tr>
+                                        <th class="p-3">Name</th>
+                                        <th class="p-3">UID</th>
+                                        <th class="p-3">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-registry-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <main id="dashboard-grid" class="w-full max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8"></main>
+    </div>
+
+    <div id="add-modal"
+        class="fixed inset-0 bg-obsidian/40 backdrop-blur-md z-[10001] hidden flex items-center justify-center p-4">
+        <div class="glass p-8 rounded-3xl max-w-md w-full relative">
+            <h2 class="text-2xl font-bold mb-8 text-white">New Uplink</h2>
+            <div class="space-y-6">
+                <input type="text" id="add-name" placeholder="Service Name (Google, Discord...)"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl p-4 outline-none text-white focus:border-neonCyan">
+                <input type="text" id="add-secret" placeholder="Secret Key (Base32)"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl p-4 outline-none text-white focus:border-neonCyan">
+                <button onclick="addAccount()"
+                    class="w-full btn-gradient text-white font-bold py-4 rounded-xl uppercase tracking-widest shadow-lg">Save
+                    Link</button>
+                <button onclick="toggleModal('add-modal')"
+                    class="w-full text-xs text-slate-500 hover:text-white uppercase transition-colors">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Secure Confirmation Modal -->
+    <div id="confirm-modal"
+        class="fixed inset-0 bg-obsidian/60 backdrop-blur-xl z-[30000] hidden flex items-center justify-center p-4">
+        <div
+            class="glass-heavy p-10 rounded-[2.5rem] max-w-sm w-full text-center border-t-2 border-neonCyan/30 ring-1 ring-white/5">
+            <div class="w-16 h-16 bg-neonCyan/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span class="text-neonCyan text-3xl font-black">!</span>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tighter">Secure Authorization</h3>
+            <p id="confirm-msg" class="text-slate-400 text-sm mb-10 leading-relaxed">Confirm this priority operation?
+            </p>
+            <div class="flex gap-4">
+                <button id="confirm-cancel"
+                    class="flex-1 bg-white/5 hover:bg-white/10 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all">Abort</button>
+                <button id="confirm-ok"
+                    class="flex-1 btn-gradient py-4 rounded-2xl text-xs font-bold uppercase tracking-widest text-white shadow-lg shadow-neonCyan/20">Authorize</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"
+        class="fixed bottom-8 left-1/2 -translate-x-1/2 glass border-neonCyan/30 px-6 py-3 rounded-2xl text-xs font-bold text-neonCyan z-[20001] toast opacity-0 pointer-events-none uppercase">
+        Success
+    </div>
+
+    <script src="./app.js"></script>
+</body>
+
+</html>
