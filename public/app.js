@@ -138,28 +138,29 @@ function renderDashboard() {
         <div class="glass p-8 rounded-[2rem] hover:bg-white/[0.07] transition-all group relative overflow-hidden">
             <div class="absolute -top-12 -right-12 w-32 h-32 bg-neonCyan opacity-[0.03] blur-3xl rounded-full group-hover:opacity-[0.1] transition-opacity"></div>
             
-            <div class="flex justify-between items-start mb-6">
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
+            <div class="flex flex-col mb-6">
+                <!-- Top row: name/badge left, timer right -->
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center gap-2">
                         <p class="text-[10px] uppercase font-bold text-slate-500 tracking-widest">${item.name}</p>
                         ${item.service_type ? `<span class="text-[8px] bg-neonCyan/10 text-neonCyan px-2 py-0.5 rounded font-black border border-neonCyan/20">${item.service_type.toUpperCase()}</span>` : ''}
                     </div>
-                </div>
-                <!-- VISUAL TIMER -->
-                <div class="flex items-center justify-center w-10 h-10 rounded-full border border-neonCyan/30 bg-neonCyan/5 shadow-[0_0_15px_rgba(0,243,255,0.1)] relative shrink-0" title="Code Refreshes In...">
-                    <span class="text-neonCyan font-black text-xs font-cyber leading-none otp-timer">${item.remaining}s</span>
-                </div>
-                    <div class="flex items-center gap-4 mt-2">
-                        <h2 class="text-4xl font-bold tracking-tighter text-white font-cyber">${formatToken(item.token)}</h2>
-                        <button onclick="copyToClipboard('${item.token}')" class="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-neonCyan transition-all active:scale-90" title="Copy Code">
-                            <span class="copy-icon text-[10px] font-bold">COPY</span>
-                        </button>
+                    <!-- VISUAL TIMER -->
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full border border-neonCyan/30 bg-neonCyan/5 shadow-[0_0_15px_rgba(0,243,255,0.1)] shrink-0" title="Code Refreshes In...">
+                        <span class="text-neonCyan font-black text-xs font-cyber leading-none otp-timer">${item.remaining}s</span>
                     </div>
+                </div>
+                <!-- OTP code row -->
+                <div class="flex items-center gap-4">
+                    <h2 class="text-4xl font-bold tracking-tighter text-white font-cyber">${formatToken(item.token)}</h2>
+                    <button onclick="copyToClipboard('${item.token}')" class="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-neonCyan transition-all active:scale-90" title="Copy Code">
+                        <span class="copy-icon text-[10px] font-bold">COPY</span>
+                    </button>
                 </div>
             </div>
             
             ${item.isPreStocked ? `
-            <div class="mb-4 space-y-2 p-4 rounded-xl border border-white/10" style="background: rgba(5,5,15,0.85);">
+            <div class="mb-4 space-y-2 p-4 rounded-xl border border-white/10 bg-white/[0.03]">
                 <div class="flex justify-between items-center mb-2 pb-2 border-b border-white/10">
                     <p class="text-[8px] uppercase text-slate-400 font-bold">Subscription Status</p>
                     <span class="text-[9px] font-black ${getExpiryColor(item.creation_date)} px-2 py-0.5 rounded-full border ${getExpiryBorder(item.creation_date)}">
@@ -168,11 +169,11 @@ function renderDashboard() {
                 </div>
                 <div class="flex justify-between items-end py-1">
                     <div><p class="text-[8px] uppercase text-slate-400 mb-0.5">Email Identifier</p><p class="text-[11px] text-neonCyan font-mono font-bold">${item.email}</p></div>
-                    <button onclick="copyToClipboard('${item.email}')" class="text-[8px] text-slate-500 hover:text-neonCyan uppercase font-bold transition-colors">Copy</button>
+                    <button onclick="copyToClipboard('${item.email}', 'Email Copied')" class="text-[8px] text-slate-500 hover:text-neonCyan uppercase font-bold transition-colors">Copy</button>
                 </div>
                 <div class="flex justify-between items-end py-1">
                     <div><p class="text-[8px] uppercase text-slate-400 mb-0.5">Password</p><p class="text-[11px] text-neonCyan font-mono font-bold">${item.password}</p></div>
-                    <button onclick="copyToClipboard('${item.password}')" class="text-[8px] text-slate-500 hover:text-neonCyan uppercase font-bold transition-colors">Copy</button>
+                    <button onclick="copyToClipboard('${item.password}', 'Password Copied')" class="text-[8px] text-slate-500 hover:text-neonCyan uppercase font-bold transition-colors">Copy</button>
                 </div>
             </div>
             ` : ''}
@@ -392,8 +393,8 @@ function toast(msg) {
     }, 2000);
 }
 
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => toast('Code Copied'));
+function copyToClipboard(text, label) {
+    navigator.clipboard.writeText(text).then(() => toast(label || 'Code Copied'));
 }
 
 setInterval(() => {

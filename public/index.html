@@ -27,8 +27,11 @@
         }
 
         .toast {
-            transform: translateY(100px);
-            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            transform: translateY(120px);
+            transition: transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            background: rgba(5, 5, 20, 0.95) !important;
+            border: 1px solid rgba(0, 243, 255, 0.4) !important;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
         }
 
         .toast.show {
@@ -345,7 +348,7 @@
     </div>
 
     <div id="toast"
-        class="fixed bottom-8 left-1/2 -translate-x-1/2 glass border-neonCyan/30 px-6 py-3 rounded-2xl text-xs font-bold text-neonCyan z-[20001] toast opacity-0 pointer-events-none uppercase">
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl text-xs font-bold text-neonCyan z-[99999] toast opacity-100 pointer-events-none uppercase tracking-widest">
         Success
     </div>
 
