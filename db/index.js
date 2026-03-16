@@ -1,42 +1,63 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { Pool } = require('pg');
 
-const dbPath = path.resolve(__dirname, '../database.sqlite');
-const db = new sqlite3.Database(dbPath);
-
-db.serialize(() => {
-    // Users Table
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        uid_4 TEXT UNIQUE NOT NULL,
-        name TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        role TEXT DEFAULT 'user'
-    )`);
-
-    // Manual Secrets Table (owned by user)
-    db.run(`CREATE TABLE IF NOT EXISTS secrets (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        name TEXT NOT NULL,
-        encrypted_secret TEXT NOT NULL,
-        iv TEXT NOT NULL,
-        FOREIGN KEY(user_id) REFERENCES users(id)
-    )`);
-
-    // Pre-stocked Accounts Table
-    db.run(`CREATE TABLE IF NOT EXISTS pre_stocked (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT NOT NULL,
-        password TEXT NOT NULL,
-        encrypted_secret TEXT NOT NULL,
-        iv TEXT NOT NULL,
-        service_type TEXT, -- ChatGPT Plus, Business, etc.
-        creation_date TEXT, -- YYYY-MM-DD
-        assigned_to_uid TEXT, -- 4-digit ID
-        FOREIGN KEY(assigned_to_uid) REFERENCES users(uid_4)
-    )`);
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }  // required for Supabase/Render
 });
 
-module.exports = db;
+// Auto-create tables on startup
+async function initDB() {
+    const client = await pool.connect();
+    try {
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                uid_4 TEXT UNIQUE NOT NULL,
+                name TEXT NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                role TEXT DEFAULT 'user'
+            )
+        `);
+
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS secrets (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                encrypted_secret TEXT NOT NULL,
+                iv TEXT NOT NULL
+            )
+        `);
+
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS pre_stocked (
+                id SERIAL PRIMARY KEY,
+                email TEXT NOT NULL,
+                password TEXT NOT NULL,
+                encrypted_secret TEXT NOT NULL,
+                iv TEXT NOT NULL,
+                service_type TEXT,
+                creation_date TEXT,
+                assigned_to_uid TEXT
+            )
+        `);
+
+        console.log('DB: Tables verified / created');
+    } finally {
+        client.release();
+    }
+}
+
+initDB().catch(err => console.error('DB_INIT_ERROR:', err.message));
+
+// Helper: run a query and return rows
+pool.query_ = async (sql, params = []) => {
+    // Convert SQLite ? placeholders to PostgreSQL $1, $2, ...
+    let i = 0;
+    const pgSql = sql.replace(/\?/g, () => `$${++i}`);
+    const result = await pool.query(pgSql, params);
+    return result;
+};
+
+module.exports = pool;

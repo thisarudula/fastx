@@ -2,7 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const speakeasy = require('speakeasy');
-const db = require('./db');
+const pool = require('./db');
 const { encrypt, decrypt } = require('./utils/crypto');
 const path = require('path');
 require('dotenv').config();
@@ -14,7 +14,7 @@ app.use(session({
     secret: 'fastx_secret_key_8822',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
 }));
 
 const isAuth = (req, res, next) => {
@@ -27,23 +27,35 @@ const isAdmin = (req, res, next) => {
     else res.status(403).json({ error: 'FORBIDDEN_ZONE' });
 };
 
+// Helper: run a parameterised query (converts ? to $n for pg)
+async function q(sql, params = []) {
+    let i = 0;
+    const pgSql = sql.replace(/\?/g, () => `$${++i}`);
+    const result = await pool.query(pgSql, params);
+    return result;
+}
+
 // --- AUTH API ---
 
 app.post('/api/auth/signup', async (req, res) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) return res.status(400).json({ error: 'ALL_FIELDS_REQUIRED' });
-    const uid_4 = Math.floor(1000 + Math.random() * 9000).toString();
-    const hash = await bcrypt.hash(password, 10);
-    db.run('INSERT INTO users (name, email, password_hash, uid_4) VALUES (?, ?, ?, ?)', [name, email, hash, uid_4], function (err) {
-        if (err) return res.status(400).json({ error: 'EMAIL_ALREADY_EXISTS' });
+    try {
+        const uid_4 = Math.floor(1000 + Math.random() * 9000).toString();
+        const hash = await bcrypt.hash(password, 10);
+        await q('INSERT INTO users (name, email, password_hash, uid_4) VALUES (?, ?, ?, ?)', [name, email, hash, uid_4]);
         res.json({ success: true, uid: uid_4 });
-    });
+    } catch (err) {
+        res.status(400).json({ error: 'EMAIL_ALREADY_EXISTS' });
+    }
 });
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
-    db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
-        if (err || !user) return res.status(401).json({ error: 'INVALID_CREDENTIALS' });
+    try {
+        const { rows } = await q('SELECT * FROM users WHERE email = ?', [email]);
+        const user = rows[0];
+        if (!user) return res.status(401).json({ error: 'INVALID_CREDENTIALS' });
         const match = await bcrypt.compare(password, user.password_hash);
         if (!match) return res.status(401).json({ error: 'INVALID_CREDENTIALS' });
         req.session.userId = user.id;
@@ -51,7 +63,9 @@ app.post('/api/auth/login', (req, res) => {
         req.session.role = user.role;
         req.session.userName = user.name;
         res.json({ success: true, user: { name: user.name, uid: user.uid_4, role: user.role } });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.post('/api/auth/logout', (req, res) => {
@@ -66,81 +80,95 @@ app.get('/api/auth/me', (req, res) => {
 
 // --- DASHBOARD API ---
 
-app.get('/api/dashboard', isAuth, (req, res) => {
+app.get('/api/dashboard', isAuth, async (req, res) => {
     const userId = req.session.userId;
     const uid_4 = req.session.uid_4;
-    console.log(`FETCH_DASHBOARD: UserID=${userId}, UID4=${uid_4}`);
+    try {
+        const { rows: manualRows } = await q('SELECT * FROM secrets WHERE user_id = ?', [userId]);
+        const { rows: assignedRows } = await q(
+            'SELECT id, email, password, encrypted_secret, iv, service_type, creation_date FROM pre_stocked WHERE assigned_to_uid = ?',
+            [uid_4]
+        );
 
-    db.all('SELECT * FROM secrets WHERE user_id = ?', [userId], (err, manualRows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        db.all('SELECT id, email, password, encrypted_secret, iv, service_type, creation_date FROM pre_stocked WHERE assigned_to_uid = ?', [uid_4], (err, assignedRows) => {
-            if (err) return res.status(500).json({ error: err.message });
-            console.log(`DASHBOARD_DATA: Manual=${manualRows.length}, Assigned=${assignedRows.length}`);
+        const dashboard = [
+            ...manualRows.map(r => ({ ...r, type: 'manual' })),
+            ...assignedRows.map(r => ({ ...r, type: 'assigned' }))
+        ].map(row => {
+            try {
+                const decryptedSecret = decrypt(row.encrypted_secret, row.iv);
+                const token = speakeasy.totp({ secret: decryptedSecret, encoding: 'base32' });
+                return {
+                    id: row.id,
+                    isPreStocked: row.type === 'assigned',
+                    name: row.name || 'ChatGPT Account',
+                    email: row.email || null,
+                    password: row.password || null,
+                    token,
+                    service_type: row.service_type || null,
+                    creation_date: row.creation_date || null,
+                    remaining: 30 - (Math.floor(Date.now() / 1000) % 30)
+                };
+            } catch (e) { return null; }
+        }).filter(i => i !== null);
 
-            const dashboard = [
-                ...manualRows.map(r => ({ ...r, type: 'manual' })),
-                ...assignedRows.map(r => ({ ...r, type: 'assigned' }))
-            ].map(row => {
-                try {
-                    const decryptedSecret = decrypt(row.encrypted_secret, row.iv);
-                    const token = speakeasy.totp({ secret: decryptedSecret, encoding: 'base32' });
-                    return {
-                        id: row.id,
-                        isPreStocked: row.type === 'assigned',
-                        name: row.name || 'ChatGPT Account',
-                        email: row.email || null,
-                        password: row.password || null,
-                        token,
-                        service_type: row.service_type || null,
-                        creation_date: row.creation_date || null,
-                        remaining: 30 - (Math.floor(Date.now() / 1000) % 30)
-                    };
-                } catch (e) { return null; }
-            }).filter(i => i !== null);
-            res.json(dashboard);
-        });
-    });
+        res.json(dashboard);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.post('/api/add', isAuth, (req, res) => {
+app.post('/api/add', isAuth, async (req, res) => {
     const { name, secret } = req.body;
-    const { iv, encryptedData } = encrypt(secret);
-    db.run('INSERT INTO secrets (user_id, name, encrypted_secret, iv) VALUES (?, ?, ?, ?)', [req.session.userId, name, encryptedData, iv], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true, id: this.lastID });
-    });
+    try {
+        const { iv, encryptedData } = encrypt(secret);
+        const { rows } = await q(
+            'INSERT INTO secrets (user_id, name, encrypted_secret, iv) VALUES (?, ?, ?, ?) RETURNING id',
+            [req.session.userId, name, encryptedData, iv]
+        );
+        res.json({ success: true, id: rows[0].id });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.delete('/api/terminate/:id', isAuth, (req, res) => {
-    db.run('DELETE FROM secrets WHERE id = ? AND user_id = ?', [req.params.id, req.session.userId], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+app.delete('/api/terminate/:id', isAuth, async (req, res) => {
+    try {
+        await q('DELETE FROM secrets WHERE id = ? AND user_id = ?', [req.params.id, req.session.userId]);
         res.json({ success: true });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // --- ADMIN API ---
 
-app.post('/api/admin/stock', isAuth, isAdmin, (req, res) => {
+app.post('/api/admin/stock', isAuth, isAdmin, async (req, res) => {
     const { email, password, secret, serviceType, creationDate } = req.body;
-    const { iv, encryptedData } = encrypt(secret);
-    db.run('INSERT INTO pre_stocked (email, password, encrypted_secret, iv, service_type, creation_date) VALUES (?, ?, ?, ?, ?, ?)', [email, password, encryptedData, iv, serviceType, creationDate], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        console.log(`STOCK_INITIALIZED: ID=${this.lastID}, Date=${creationDate}`);
-        res.json({ success: true, id: this.lastID });
-    });
+    try {
+        const { iv, encryptedData } = encrypt(secret);
+        const { rows } = await q(
+            'INSERT INTO pre_stocked (email, password, encrypted_secret, iv, service_type, creation_date) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
+            [email, password, encryptedData, iv, serviceType, creationDate]
+        );
+        res.json({ success: true, id: rows[0].id });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.post('/api/admin/assign', isAuth, isAdmin, (req, res) => {
+app.post('/api/admin/assign', isAuth, isAdmin, async (req, res) => {
     const { stockId, userUid } = req.body;
-    db.run('UPDATE pre_stocked SET assigned_to_uid = ? WHERE id = ?', [userUid, stockId], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        await q('UPDATE pre_stocked SET assigned_to_uid = ? WHERE id = ?', [userUid, stockId]);
         res.json({ success: true });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.get('/api/admin/inventory', isAuth, isAdmin, (req, res) => {
-    db.all('SELECT id, email, assigned_to_uid, encrypted_secret, iv, service_type, creation_date FROM pre_stocked', (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+app.get('/api/admin/inventory', isAuth, isAdmin, async (req, res) => {
+    try {
+        const { rows } = await q('SELECT id, email, assigned_to_uid, encrypted_secret, iv, service_type, creation_date FROM pre_stocked');
         const enriched = rows.map(i => {
             try {
                 const secret = decrypt(i.encrypted_secret, i.iv);
@@ -151,43 +179,49 @@ app.get('/api/admin/inventory', isAuth, isAdmin, (req, res) => {
             }
         });
         res.json(enriched);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.post('/api/admin/unassign', isAuth, isAdmin, (req, res) => {
+app.post('/api/admin/unassign', isAuth, isAdmin, async (req, res) => {
     const { stockId } = req.body;
-    db.run('UPDATE pre_stocked SET assigned_to_uid = NULL WHERE id = ?', [stockId], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        await q('UPDATE pre_stocked SET assigned_to_uid = NULL WHERE id = ?', [stockId]);
         res.json({ success: true });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.get('/api/admin/users', isAuth, isAdmin, (req, res) => {
-    db.all('SELECT name, email, uid_4 FROM users', (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+app.get('/api/admin/users', isAuth, isAdmin, async (req, res) => {
+    try {
+        const { rows } = await q('SELECT name, email, uid_4 FROM users');
         res.json(rows);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.delete('/api/admin/users/:uid', isAuth, isAdmin, (req, res) => {
+app.delete('/api/admin/users/:uid', isAuth, isAdmin, async (req, res) => {
     const uid = req.params.uid;
     if (uid === '0001') return res.status(403).json({ error: 'ROOT_ADMIN_IMMUTABLE' });
-
-    db.run('DELETE FROM users WHERE uid_4 = ?', [uid], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        // Also clean up secrets
-        db.run('DELETE FROM secrets WHERE user_id NOT IN (SELECT id FROM users)', [], () => {
-            res.json({ success: true });
-        });
-    });
-});
-
-app.delete('/api/admin/inventory/:id', isAuth, isAdmin, (req, res) => {
-    db.run('DELETE FROM pre_stocked WHERE id = ?', [req.params.id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        await q('DELETE FROM users WHERE uid_4 = ?', [uid]);
         res.json({ success: true });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-const PORT = 3000;
+app.delete('/api/admin/inventory/:id', isAuth, isAdmin, async (req, res) => {
+    try {
+        await q('DELETE FROM pre_stocked WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`FASTX_CORE: ONLINE // PORT: ${PORT}`));
