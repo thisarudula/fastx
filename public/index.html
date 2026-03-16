@@ -27,7 +27,7 @@
         }
 
         .toast {
-            transform: translateY(120px);
+            transform: translateX(-50%) translateY(120px);
             transition: transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
             background: rgba(5, 5, 20, 0.95) !important;
             border: 1px solid rgba(0, 243, 255, 0.4) !important;
@@ -35,7 +35,7 @@
         }
 
         .toast.show {
-            transform: translateY(0);
+            transform: translateX(-50%) translateY(0);
         }
 
         .glass-heavy {
@@ -348,7 +348,7 @@
     </div>
 
     <div id="toast"
-        class="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl text-xs font-bold text-neonCyan z-[99999] toast opacity-100 pointer-events-none uppercase tracking-widest">
+        class="fixed bottom-6 left-1/2 px-6 py-3 rounded-2xl text-xs font-bold text-neonCyan z-[99999] toast opacity-100 pointer-events-none uppercase tracking-widest">
         Success
     </div>
 
