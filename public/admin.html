@@ -90,13 +90,17 @@
             position: relative;
         }
 
-        /* Falling Stars Animation */
-        .stars-container {
+        /* --- STAR BACKGROUND --- */
+        #bg-layer {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            inset: 0;
+            background: #050505;
+            z-index: -3;
+        }
+
+        .stars-wrap {
+            position: fixed;
+            inset: 0;
             overflow: hidden;
             z-index: -2;
             pointer-events: none;
@@ -104,44 +108,51 @@
 
         .star {
             position: absolute;
-            background: linear-gradient(45deg, #00f3ff, transparent);
+            top: -5px;
             border-radius: 50%;
-            filter: drop-shadow(0 0 6px #00f3ff);
-            animation: fall linear infinite;
+            background: white;
+            opacity: 0;
+            animation: starfall linear infinite;
         }
 
-        @keyframes fall {
-            0% {
-                transform: translateY(-10vh) translateX(0) scale(0);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(110vh) translateX(20vw) scale(1);
-                opacity: 0;
-            }
+        .star.cyan {
+            background: #00f3ff;
+            box-shadow: 0 0 4px 1px #00f3ff;
+        }
+
+        @keyframes starfall {
+            0%   { transform: translateY(-20px); opacity: 0; }
+            10%  { opacity: 1; }
+            90%  { opacity: 0.6; }
+            100% { transform: translateY(110vh); opacity: 0; }
         }
     </style>
 </head>
 
-<body class="min-h-screen bg-obsidian text-slate-200 p-4 md:p-8 overflow-x-hidden relative">
+<body class="min-h-screen text-slate-200 p-4 md:p-8 overflow-x-hidden relative bg-transparent">
 
-    <!-- CSS Star Background -->
-    <div class="stars-container" id="stars"></div>
-    <div class="fixed inset-0 bg-gradient-to-b from-transparent to-deepNavy/80 z-[-1] pointer-events-none"></div>
+    <!-- Layered Background: dark base → stars → content -->
+    <div id="bg-layer"></div>
+    <div class="stars-wrap" id="stars-wrap"></div>
+    <div class="fixed inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0a0a14]/60 z-[-1] pointer-events-none"></div>
 
     <script>
-        // Generate stars
-        const starsContainer = document.getElementById('stars');
-        for (let i = 0; i < 40; i++) {
-            const star = document.createElement('div');
-            star.classList.add('star');
-            star.style.width = Math.random() * 3 + 'px';
-            star.style.height = star.style.width;
-            star.style.left = Math.random() * 100 + 'vw';
-            star.style.animationDuration = (Math.random() * 3 + 2) + 's';
-            star.style.animationDelay = Math.random() * 5 + 's';
-            starsContainer.appendChild(star);
-        }
+        (() => {
+            const wrap = document.getElementById('stars-wrap');
+            for (let i = 0; i < 55; i++) {
+                const s = document.createElement('div');
+                s.className = 'star' + (Math.random() > 0.6 ? ' cyan' : '');
+                const size = Math.random() * 2.5 + 0.5;
+                s.style.cssText = [
+                    `width:${size}px`,
+                    `height:${size}px`,
+                    `left:${Math.random() * 100}vw`,
+                    `animation-duration:${(Math.random() * 6 + 4)}s`,
+                    `animation-delay:${(Math.random() * 8)}s`
+                ].join(';');
+                wrap.appendChild(s);
+            }
+        })();
     </script>
 
     <div id="app-content" class="w-full">
