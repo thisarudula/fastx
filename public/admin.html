@@ -92,54 +92,63 @@
     </style>
 </head>
 
-<body class="min-h-screen bg-obsidian text-slate-200 p-4 md:p-8 overflow-x-hidden">
+<body class="min-h-screen bg-transparent text-slate-200 p-4 md:p-8 overflow-x-hidden relative">
+
+    <!-- Video Background -->
+    <video autoplay loop muted playsinline class="fixed inset-0 w-full h-full object-cover z-[-2]">
+        <source src="https://assets.mixkit.co/videos/preview/mixkit-abstract-technology-network-connections-27898-large.mp4" type="video/mp4">
+    </video>
+    <div class="fixed inset-0 bg-obsidian/85 backdrop-blur-[3px] z-[-1] pointer-events-none"></div>
+
     <div id="app-content" class="w-full">
         <header
-            class="w-full max-w-4xl mx-auto flex flex-row items-center justify-between mb-8 p-3 sm:p-5 sm:px-8 glass rounded-full border border-white/5 relative overflow-hidden group">
+            class="w-full max-w-4xl mx-auto flex flex-row flex-wrap sm:flex-nowrap items-center justify-between mb-8 p-4 sm:p-5 sm:px-8 glass rounded-3xl sm:rounded-full border border-white/5 relative overflow-hidden group gap-y-3 shadow-2xl">
             <div class="absolute inset-0 bg-gradient-to-r from-neonCyan/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
 
             <!-- Logo -->
-            <div class="flex flex-col text-left relative z-10 min-w-fit">
-                <h1 class="text-xl sm:text-3xl font-black tracking-tighter text-white font-cyber logo-pulse leading-none">
+            <div class="flex flex-col text-left relative z-10 w-auto">
+                <h1 class="text-2xl sm:text-3xl font-black tracking-tighter text-white font-cyber logo-pulse leading-none">
                     <span class="text-neonCyan">FAST</span>X
                 </h1>
-                <p class="text-[6px] sm:text-[9px] uppercase tracking-[0.3em] sm:tracking-[0.4em] text-slate-500 font-bold mt-1">
+                <p class="text-[7px] sm:text-[9px] uppercase tracking-[0.3em] sm:tracking-[0.4em] text-slate-500 font-bold mt-1">
                     Admin<span class="text-neonCyan/40">_</span>Panel
                 </p>
             </div>
             
-            <!-- Auth Status Mid Box -->
-            <div class="flex flex-col text-center overflow-hidden relative z-10 flex-1 px-2 sm:px-6">
-                <span class="text-[7px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-slate-500 font-black mb-1 hidden sm:block">Authorization Status</span>
-                <div class="flex flex-row items-center justify-center gap-1.5 sm:gap-3">
-                    <h2 id="welcome-text" class="text-[10px] sm:text-sm font-bold text-white tracking-tight truncate max-w-[80px] sm:max-w-[200px]">Syncing...</h2>
-                    <span id="user-display" class="hidden sm:inline-block text-[8px] sm:text-[10px] bg-white/5 text-slate-300 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md font-mono border border-white/10 shrink-0">UID: ---</span>
-                    <span id="admin-badge" class="text-[7px] sm:text-[8px] uppercase bg-neonCyan/10 text-neonCyan px-1.5 sm:px-2 py-0.5 sm:py-1 rounded font-black border border-neonCyan/20 shrink-0">ADMIN</span>
-                </div>
-            </div>
-
             <!-- Corner Buttons -->
-            <div class="flex flex-row items-center justify-end gap-1.5 sm:gap-3 relative z-10 min-w-fit">
+            <div class="flex flex-row items-center justify-end gap-2 sm:gap-3 relative z-10 w-auto order-2 sm:order-3 pt-1 sm:pt-0">
                 <button onclick="window.location.href='/'"
-                    class="bg-white/10 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full font-bold uppercase text-[7px] sm:text-[9px] tracking-widest hover:bg-white/20 hover:scale-105 transition-all shadow-lg whitespace-nowrap">
+                    class="bg-white/10 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full font-bold uppercase text-[7px] sm:text-[9px] tracking-widest hover:bg-white/20 hover:scale-105 transition-all shadow-lg whitespace-nowrap border border-white/10">
                     Back
                 </button>
-                <div onclick="logout()" class="logout-circle !w-9 !h-9 sm:!w-11 sm:!h-11" title="Secure Logout">
+                <div onclick="logout()" class="logout-circle !w-10 !h-10 sm:!w-11 sm:!h-11" title="Secure Logout">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
+                </div>
+            </div>
+
+            <!-- Auth Status Mid Box -->
+            <div class="flex flex-col text-center overflow-hidden relative z-10 w-full sm:w-auto flex-1 px-2 sm:px-6 order-3 sm:order-2 border-t sm:border-none border-white/5 pt-3 sm:pt-0 pb-1 sm:pb-0">
+                <span class="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] text-slate-500 font-black mb-1.5 hidden sm:block">Authorization Status</span>
+                <div class="flex flex-row items-center sm:justify-center justify-between gap-1.5 sm:gap-3 w-full">
+                    <h2 id="welcome-text" class="text-xs sm:text-sm font-bold text-white tracking-tight truncate shrink">Syncing...</h2>
+                    <div class="flex gap-1.5 shrink-0">
+                        <span id="user-display" class="hidden sm:inline-block text-[9px] sm:text-[10px] bg-white/5 text-slate-300 px-2 sm:px-2.5 py-1 rounded-md font-mono border border-white/10 shrink-0">UID: ---</span>
+                        <span id="admin-badge" class="text-[8px] sm:text-[8px] uppercase bg-neonCyan/10 text-neonCyan px-2 py-1 rounded font-black border border-neonCyan/20 shrink-0">ADMIN</span>
+                    </div>
                 </div>
             </div>
         </header>
 
         <section id="admin-dashboard-section"
             class="w-full max-w-4xl mx-auto mb-12 p-5 sm:p-8 glass rounded-[2.5rem] border border-neonCyan/10">
-            <div class="flex flex-col sm:flex-row items-center sm:items-start justify-between mb-8 gap-4 sm:gap-0 text-center sm:text-left">
-                <h2 class="text-2xl font-bold text-white font-cyber flex items-center gap-3">
-                    <span class="w-2 h-2 bg-neonCyan rounded-full animate-pulse"></span>
-                    STOCK_INVENTORY
+            <div class="flex flex-col sm:flex-row items-center sm:items-start justify-between mb-8 gap-2 sm:gap-0 text-center sm:text-left">
+                <h2 class="text-xl sm:text-2xl font-bold text-white font-cyber flex items-center gap-2 sm:gap-3 break-all sm:break-normal max-w-full leading-tight">
+                    <span class="w-2 h-2 bg-neonCyan rounded-full animate-pulse shrink-0"></span>
+                    <span class="truncate">STOCK_INVENTORY</span>
                 </h2>
-                <span class="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-bold">Terminal Integrated</span>
+                <span class="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.3em] text-slate-500 font-bold shrink-0">Terminal Integrated</span>
             </div>
 
             <div class="space-y-10">

@@ -139,6 +139,11 @@ function renderDashboard() {
                         <p class="text-[10px] uppercase font-bold text-slate-500 tracking-widest">${item.name}</p>
                         ${item.service_type ? `<span class="text-[8px] bg-neonCyan/10 text-neonCyan px-2 py-0.5 rounded font-black border border-neonCyan/20">${item.service_type.toUpperCase()}</span>` : ''}
                     </div>
+                </div>
+                <!-- VISUAL TIMER -->
+                <div class="flex items-center justify-center w-10 h-10 rounded-full border border-neonCyan/30 bg-neonCyan/5 shadow-[0_0_15px_rgba(0,243,255,0.1)] relative shrink-0" title="Code Refreshes In...">
+                    <span class="text-neonCyan font-black text-xs font-cyber leading-none otp-timer">${item.remaining}s</span>
+                </div>
                     <div class="flex items-center gap-4 mt-2">
                         <h2 class="text-4xl font-bold tracking-tighter text-white font-cyber">${formatToken(item.token)}</h2>
                         <button onclick="copyToClipboard('${item.token}')" class="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-neonCyan transition-all active:scale-90" title="Copy Code">
@@ -394,6 +399,10 @@ setInterval(() => {
 
     if (syncTimer) syncTimer.innerText = remaining;
     if (syncProgress) syncProgress.style.width = (remaining / 30 * 100) + '%';
+    
+    document.querySelectorAll('.otp-timer').forEach(el => {
+        el.innerText = remaining + 's';
+    });
 
     if (remaining === 30) {
         fetchDashboard();
